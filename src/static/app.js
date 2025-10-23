@@ -51,7 +51,49 @@ document.addEventListener("DOMContentLoaded", () => {
           participants.forEach((p) => {
             const li = document.createElement("li");
             li.className = "participant-item";
-            li.textContent = p;
+
+            const emailSpan = document.createElement("span");
+            emailSpan.className = "participant-email";
+            emailSpan.textContent = p;
+
+            const deleteBtn = document.createElement("button");
+            deleteBtn.className = "participant-delete";
+            deleteBtn.setAttribute("aria-label", `Unregister ${p}`);
+            // simple trash icon using HTML entity
+            deleteBtn.innerHTML = "\uD83D\uDDD1";
+
+            deleteBtn.addEventListener("click", async () => {
+              // Call the server to unregister
+              try {
+                const resp = await fetch(
+                  `/activities/${encodeURIComponent(name)}/unregister?email=${encodeURIComponent(p)}`,
+                  { method: "DELETE" }
+                );
+
+                const resJson = await resp.json();
+                if (resp.ok) {
+                  // Remove the list item from the DOM
+                  li.remove();
+
+                  // If no participants left, show placeholder
+                  if (participantsList.querySelectorAll('.participant-item').length === 0) {
+                    const placeholder = document.createElement('li');
+                    placeholder.className = 'participant-item none';
+                    placeholder.textContent = 'No participants yet';
+                    participantsList.appendChild(placeholder);
+                  }
+                } else {
+                  console.error('Failed to unregister:', resJson);
+                  alert(resJson.detail || 'Failed to unregister participant');
+                }
+              } catch (err) {
+                console.error('Error unregistering participant:', err);
+                alert('Error unregistering participant');
+              }
+            });
+
+            li.appendChild(emailSpan);
+            li.appendChild(deleteBtn);
             participantsList.appendChild(li);
           });
         } else {
